@@ -1,0 +1,17 @@
+[
+    {
+        "id": 1,
+        "name": "Forest Encounter",
+        "description": "A basic encounter in the woods."
+    },
+    {
+        "id": 2,
+        "name": "Cave Exploration",
+        "description": "Navigate through dark caves with new enemies."
+    },
+    {
+        "id": 3,
+        "name": "Mountain Ascent",
+        "description": "Climb treacherous peaks."
+    }
+]

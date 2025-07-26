@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uru - Tactical RPG</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="game-screen">
+        <div id="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        <div id="ui-container">
+            <div id="char-stats">
+                <!-- Character cards will be dynamically inserted here -->
+            </div>
+            <div id="controls">
+                <div id="action-buttons" class="hidden">
+                    <button id="basic-attack-btn">Basic Attack</button>
+                    <button id="skill-attack-btn">Skill Attack</button>
+                </div>
+                <div id="bottom-controls">
+                    <button id="end-turn-btn">End Turn</button>
+                    <button id="back-to-missions-btn">Back to Missions</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/game.js"></script>
+</body>
+</html>

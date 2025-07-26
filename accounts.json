@@ -1,0 +1,82 @@
+{
+    "users": {
+        "abc": {
+            "id": "1",
+            "password": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        }
+    },
+    "player_states": {
+        "1": {
+            "current_stage": 1,
+            "game_data": {
+                "enemies": [
+                    {
+                        "id": 1,
+                        "x": 8,
+                        "y": 4,
+                        "hp": 50,
+                        "max_hp": 50,
+                        "attack_range": 1,
+                        "move_range": 2
+                    }
+                ],
+                "grid_size": {
+                    "width": 15,
+                    "height": 15
+                },
+                "characters": [
+                    {
+                        "id": 1,
+                        "x": 5,
+                        "y": 3,
+                        "hp": 100,
+                        "max_hp": 100,
+                        "sp": 4,
+                        "max_sp": 4,
+                        "attack_range": 2,
+                        "move_range": 3,
+                        "has_acted": true
+                    },
+                    {
+                        "id": 2,
+                        "x": 4,
+                        "y": 7,
+                        "hp": 100,
+                        "max_hp": 100,
+                        "sp": 4,
+                        "max_sp": 4,
+                        "attack_range": 2,
+                        "move_range": 3,
+                        "has_acted": true
+                    },
+                    {
+                        "id": 3,
+                        "x": 5,
+                        "y": 8,
+                        "hp": 100,
+                        "max_hp": 100,
+                        "sp": 4,
+                        "max_sp": 4,
+                        "attack_range": 2,
+                        "move_range": 3,
+                        "has_acted": true
+                    },
+                    {
+                        "id": 4,
+                        "x": 5,
+                        "y": 5,
+                        "hp": 100,
+                        "max_hp": 100,
+                        "sp": 4,
+                        "max_sp": 4,
+                        "attack_range": 2,
+                        "move_range": 3,
+                        "has_acted": false
+                    }
+                ],
+                "turn": "player",
+                "active_character_id": 4
+            }
+        }
+    }
+}
