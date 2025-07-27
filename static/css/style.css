@@ -10,90 +10,164 @@ html, body {
 }
 
 #game-screen {
-    display: flex;
     width: 100%;
     height: 100%;
+    position: relative;
 }
 
 #canvas-container {
-    flex-grow: 1;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: #222;
+    position: relative;
 }
 
 canvas {
     background-color: #333;
     border: 2px solid #555;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    position: relative;
+    z-index: 1;
 }
 
-#ui-container {
-    width: 280px;
-    background-color: #2a2a2a;
-    padding: 15px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    border-left: 2px solid #555;
-    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
-}
-
-#char-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    overflow-y: auto; /* For when there are many characters */
-}
-
-.char-card {
-    background-color: #383838;
-    padding: 12px;
-    border-radius: 8px;
-    border: 2px solid #555;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.char-card.active-char {
-    border-color: #00bfff;
-    box-shadow: 0 0 10px #00bfff;
-    transform: scale(1.02);
-}
-
-.char-card h3 {
-    margin: 0 0 10px;
-    color: #00bfff;
-    font-size: 1.1em;
-}
-
-.char-card p {
-    margin: 4px 0;
-    font-size: 0.9em;
-}
-
-.skill-points {
-    display: flex;
-    gap: 5px;
-    margin-top: 8px;
-}
-
-.skill-points .star {
-    font-size: 20px;
-    color: #555; /* Empty star color */
-}
-
-.skill-points .star.filled {
-    color: #ffdd00; /* Filled star color */
-}
-
-#action-buttons {
+/* Fixed position controls in corner */
+#fixed-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-top: 20px;
+    z-index: 100;
+}
+
+/* Team SP display */
+#team-sp-display {
+    background-color: rgba(42, 42, 42, 0.95);
+    border: 2px solid #00bfff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #eee;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#team-sp-number {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#team-sp-icons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sp-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+/* Unit tooltip for hovering */
+#unit-tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #555;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 50;
+    white-space: nowrap;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Action wheel styling */
+#action-wheel {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(42, 42, 42, 0.95);
+    border: 2px solid #00bfff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
+    transform: translate(-50%, -50%);
+}
+
+.action-wheel-option {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background-color: #007bff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #555;
+    padding: 0;
+    overflow: hidden;
+}
+
+.action-wheel-option:hover {
+    background-color: #0056b3;
+    transform: scale(1.1);
+    box-shadow: 0 0 12px rgba(0, 123, 255, 0.6);
+}
+
+.action-wheel-option:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.action-wheel-option:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.action-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    filter: brightness(0) invert(1); /* Makes icons white */
+}
+
+.action-wheel-option:disabled .action-icon {
+    filter: brightness(0) invert(0.5); /* Makes disabled icons gray */
+}
+
+/* Position the action wheel options in a triangle */
+#dont-move-btn {
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#basic-attack-btn {
+    bottom: 10px;
+    left: 10px;
+}
+
+#skill-attack-btn {
+    bottom: 10px;
+    right: 10px;
 }
 
 button {
@@ -105,8 +179,8 @@ button {
     cursor: pointer;
     font-size: 16px;
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    width: 100%;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    min-width: 120px;
 }
 
 button:hover:not(:disabled) {
@@ -117,10 +191,6 @@ button:hover:not(:disabled) {
 button:disabled {
     background-color: #555;
     cursor: not-allowed;
-}
-
-#bottom-controls {
-    margin-top: 20px;
 }
 
 #back-to-missions-btn {
@@ -148,5 +218,43 @@ a:hover {
 }
 
 .hidden {
-    display: none;
+    display: none !important; /* unfortunate use of !important to override inline styles */
+}
+
+/* Mission Select Styles */
+#player-stats {
+    background-color: #2a2a2a;
+    padding: 15px;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 2px solid #555;
+}
+
+#player-stats h2, #player-stats h3 {
+    color: #00bfff;
+    margin-top: 0;
+}
+
+#inventory-list {
+    background-color: #383838;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+#inventory-list p {
+    margin: 5px 0;
+    color: #eee;
+}
+
+.mission-info {
+    margin-top: 5px;
+    margin-bottom: 15px;
+    color: #ccc;
+    font-size: 0.9em;
+}
+
+.mission-info small {
+    display: block;
+    margin: 2px 0;
 }

@@ -2,7 +2,12 @@
     "users": {
         "abc": {
             "id": "1",
-            "password": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+            "password": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+            "total_xp": 250,
+            "inventory": {
+                "wood_fiber": 4,
+                "forest_essence": 3
+            }
         }
     },
     "player_states": {
@@ -12,12 +17,13 @@
                 "enemies": [
                     {
                         "id": 1,
-                        "x": 8,
+                        "x": 6,
                         "y": 4,
                         "hp": 50,
                         "max_hp": 50,
                         "attack_range": 1,
-                        "move_range": 2
+                        "move_range": 2,
+                        "damage": 10
                     }
                 ],
                 "grid_size": {
@@ -27,55 +33,53 @@
                 "characters": [
                     {
                         "id": 1,
-                        "x": 5,
-                        "y": 3,
+                        "x": 1,
+                        "y": 1,
                         "hp": 100,
                         "max_hp": 100,
-                        "sp": 4,
-                        "max_sp": 4,
                         "attack_range": 2,
                         "move_range": 3,
-                        "has_acted": true
+                        "has_acted": true,
+                        "damage": 25
                     },
                     {
                         "id": 2,
                         "x": 4,
-                        "y": 7,
+                        "y": 3,
                         "hp": 100,
                         "max_hp": 100,
-                        "sp": 4,
-                        "max_sp": 4,
                         "attack_range": 2,
                         "move_range": 3,
-                        "has_acted": true
+                        "has_acted": false,
+                        "damage": 25
                     },
                     {
                         "id": 3,
-                        "x": 5,
-                        "y": 8,
-                        "hp": 100,
-                        "max_hp": 100,
-                        "sp": 4,
-                        "max_sp": 4,
-                        "attack_range": 2,
-                        "move_range": 3,
-                        "has_acted": true
-                    },
-                    {
-                        "id": 4,
-                        "x": 5,
+                        "x": 4,
                         "y": 5,
                         "hp": 100,
                         "max_hp": 100,
-                        "sp": 4,
-                        "max_sp": 4,
                         "attack_range": 2,
                         "move_range": 3,
-                        "has_acted": false
+                        "has_acted": false,
+                        "damage": 25
+                    },
+                    {
+                        "id": 4,
+                        "x": 3,
+                        "y": 8,
+                        "hp": 100,
+                        "max_hp": 100,
+                        "attack_range": 2,
+                        "move_range": 3,
+                        "has_acted": false,
+                        "damage": 25
                     }
                 ],
+                "team_sp": 3,
+                "max_team_sp": 5,
                 "turn": "player",
-                "active_character_id": 4
+                "active_character_id": 2
             }
         }
     }

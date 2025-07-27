@@ -24,6 +24,89 @@ def save_accounts_data(data):
     with open(ACCOUNTS_FILE, 'w') as f:
         json.dump(data, f, indent=4)
 
+def load_missions_data():
+    with open('missions.json', 'r') as f:
+        return json.load(f)
+
+def calculate_mission_rewards(stage_id):
+    """Calculate XP and material rewards for completing a mission"""
+    missions = load_missions_data()
+    mission = next((m for m in missions if m['id'] == stage_id), None)
+    if not mission:
+        return None
+    
+    # Calculate XP reward
+    xp_reward = mission['xp']['base']
+    if random.random() < mission['xp']['extra_chance']:
+        xp_reward += int(mission['xp']['extra'] * random.random())
+    
+    # Calculate material rewards
+    material_rewards = {}
+    for material_type, material_data in mission['materials'].items():
+        amount = material_data['base']
+        if random.random() < material_data['extra_chance']:
+            amount += int(material_data['extra'] * random.random())
+        material_rewards[material_type] = amount
+    
+    return {
+        'xp': xp_reward,
+        'materials': material_rewards
+    }
+
+def check_mission_complete(game_state):
+    """Check if the mission is complete (all enemies defeated)"""
+    return len(game_state.get('enemies', [])) == 0
+
+def award_mission_rewards(user_id, stage_id):
+    """Award rewards to player and update their inventory"""
+    accounts_data = load_accounts_data()
+    
+    # Find the user by user_id
+    user_data = None
+    username = None
+    for uname, udata in accounts_data['users'].items():
+        if udata['id'] == user_id:
+            user_data = udata
+            username = uname
+            break
+    
+    if not user_data:
+        return None
+    
+    # Initialize inventory and stats if not exists
+    if 'inventory' not in user_data:
+        user_data['inventory'] = {}
+    if 'total_xp' not in user_data:
+        user_data['total_xp'] = 0
+    
+    # Calculate rewards
+    rewards = calculate_mission_rewards(stage_id)
+    if not rewards:
+        return None
+    
+    # Award XP
+    user_data['total_xp'] += rewards['xp']
+    
+    # Award materials
+    for material_type, amount in rewards['materials'].items():
+        if material_type not in user_data['inventory']:
+            user_data['inventory'][material_type] = 0
+        user_data['inventory'][material_type] += amount
+    
+    save_accounts_data(accounts_data)
+    return rewards
+
+def reset_game_state(user_id):
+    """Reset the game state after mission completion"""
+    accounts_data = load_accounts_data()
+    
+    if user_id in accounts_data['player_states']:
+        # Clear the player state completely
+        del accounts_data['player_states'][user_id]
+    
+    save_accounts_data(accounts_data)
+    return True
+
 # Stage configurations with more detailed stats
 STAGE_CONFIGS = {
     1: {
@@ -32,11 +115,13 @@ STAGE_CONFIGS = {
         ],
         'grid_size': {'width': 15, 'height': 15},
         'characters': [
-            {'id': 1, 'x': 1, 'y': 1, 'hp': 100, 'max_hp': 100, 'sp': 4, 'max_sp': 4, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
-            {'id': 2, 'x': 1, 'y': 3, 'hp': 100, 'max_hp': 100, 'sp': 4, 'max_sp': 4, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
-            {'id': 3, 'x': 1, 'y': 5, 'hp': 100, 'max_hp': 100, 'sp': 4, 'max_sp': 4, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
-            {'id': 4, 'x': 1, 'y': 7, 'hp': 100, 'max_hp': 100, 'sp': 4, 'max_sp': 4, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
-        ]
+            {'id': 1, 'x': 1, 'y': 1, 'hp': 100, 'max_hp': 100, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
+            {'id': 2, 'x': 1, 'y': 3, 'hp': 100, 'max_hp': 100, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
+            {'id': 3, 'x': 1, 'y': 5, 'hp': 100, 'max_hp': 100, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
+            {'id': 4, 'x': 1, 'y': 7, 'hp': 100, 'max_hp': 100, 'attack_range': 2, 'move_range': 3, 'has_acted': False, 'damage': 25},
+        ],
+        'team_sp': 3,
+        'max_team_sp': 5
     },
     # ... other stages
 }
@@ -115,6 +200,27 @@ def get_missions():
         missions = json.load(f)
     return jsonify(missions)
 
+@app.route('/inventory')
+@login_required
+def get_inventory():
+    user_id = str(session['user_id'])
+    accounts_data = load_accounts_data()
+    
+    # Find the user by user_id
+    user_data = None
+    for username, udata in accounts_data['users'].items():
+        if udata['id'] == user_id:
+            user_data = udata
+            break
+    
+    if not user_data:
+        return jsonify({'inventory': {}, 'total_xp': 0})
+    
+    return jsonify({
+        'inventory': user_data.get('inventory', {}),
+        'total_xp': user_data.get('total_xp', 0)
+    })
+
 # ... (registration, login, logout routes remain the same)
 @app.route('/register', methods=['POST'])
 def register():
@@ -175,6 +281,12 @@ def select_stage():
     initial_game_data['turn'] = 'player'
     if initial_game_data['characters']:
         initial_game_data['active_character_id'] = initial_game_data['characters'][0]['id']
+    
+    # Ensure team SP is initialized
+    if 'team_sp' not in initial_game_data:
+        initial_game_data['team_sp'] = 0
+    if 'max_team_sp' not in initial_game_data:
+        initial_game_data['max_team_sp'] = 5
 
     accounts_data = load_accounts_data()
     accounts_data['player_states'][user_id] = {
@@ -224,6 +336,9 @@ def move():
     char['x'], char['y'] = new_x, new_y
     char['has_acted'] = True
     
+    # ensure no enemy actions sent on player move
+    game_state.pop('enemy_actions', None)
+
     _advance_turn(game_state)
 
     save_accounts_data(accounts_data)
@@ -250,21 +365,41 @@ def attack():
     if abs(target['x'] - attacker['x']) + abs(target['y'] - attacker['y']) > attacker['attack_range']:
         return jsonify({'error': 'Target is out of range'}), 400
 
+    # Initialize team SP if not present
+    if 'team_sp' not in game_state:
+        game_state['team_sp'] = 0
+    if 'max_team_sp' not in game_state:
+        game_state['max_team_sp'] = 5
+
     if attack_type == 'skill':
-        if attacker['sp'] > 0:
+        if game_state['team_sp'] > 0:
             target['hp'] -= attacker.get('damage', 25) * 1.5 # Skill attack bonus
-            attacker['sp'] -= 1
+            game_state['team_sp'] -= 1
         else:
             return jsonify({'error': 'Not enough skill points'}), 400
     else: # Basic attack
         target['hp'] -= attacker.get('damage', 25)
+        # Increase team SP for basic attacks (up to max)
+        if game_state['team_sp'] < game_state['max_team_sp']:
+            game_state['team_sp'] += 1
 
     attacker['has_acted'] = True
 
     if target['hp'] <= 0:
         game_state['enemies'] = [e for e in game_state['enemies'] if e['id'] != target_id]
+    # Check for mission completion
+    if check_mission_complete(game_state):
+        stage_id = accounts_data['player_states'][user_id]['current_stage']
+        rewards = award_mission_rewards(user_id, stage_id)
+        game_state['mission_complete'] = True
+        game_state['rewards'] = rewards
+        # Reset game state after mission completion
+        reset_game_state(user_id)
+        return jsonify(game_state)
 
     _advance_turn(game_state)
+    # ensure no enemy actions sent on player attack
+    game_state.pop('enemy_actions', None)
 
     save_accounts_data(accounts_data)
     return jsonify(game_state)
@@ -286,7 +421,9 @@ def end_turn():
     return jsonify(game_state)
 
 def enemy_turn(game_state):
+    actions = []  # collect enemy move/attack actions
     if not game_state.get('enemies') or not game_state.get('characters'):
+        game_state['enemy_actions'] = actions
         return
 
     all_unit_positions = {(c['x'], c['y']) for c in game_state['characters']} | \
@@ -314,6 +451,13 @@ def enemy_turn(game_state):
             target_char['hp'] -= enemy.get('damage', 10) # Use damage from config, default 10
             if target_char['hp'] <= 0:
                 game_state['characters'] = [c for c in game_state['characters'] if c['id'] != target_char['id']]
+            # record attack action
+            actions.append({
+                'type': 'attack',
+                'enemy_id': enemy['id'],
+                'target_id': target_char['id'],
+                'target_pos': {'x': target_char['x'], 'y': target_char['y']}
+            })
         # Otherwise, move towards the target
         else:
             # Simple move logic: reduce the largest distance (dx or dy)
@@ -337,7 +481,9 @@ def enemy_turn(game_state):
             # Choose the move that gets it closer
             if potential_moves:
                 potential_moves.sort(key=lambda pos: abs(target_char['x'] - pos[0]) + abs(target_char['y'] - pos[1]))
-                
+                # record start and initialize path
+                start_x, start_y = enemy['x'], enemy['y']
+                path = []
                 # Move up to move_range
                 for _ in range(enemy['move_range']):
                     if not potential_moves: break
@@ -348,13 +494,12 @@ def enemy_turn(game_state):
                     if (best_move[0], best_move[1]) in all_unit_positions:
                         break # Path is blocked
 
-                    enemy['x'], enemy['y'] = best_move
-                    print(all_unit_positions)
                     all_unit_positions.remove((enemy['x'], enemy['y'])) # Old position is free
+                    enemy['x'], enemy['y'] = best_move
                     all_unit_positions.add(best_move) # New position is taken
                     
                     # Recalculate potential moves from new spot
-                    potential_moves = []
+                    potential_moves = [best_move]
                     dx = target_char['x'] - enemy['x']
                     dy = target_char['y'] - enemy['y']
                     if abs(dx) > 0:
@@ -368,7 +513,20 @@ def enemy_turn(game_state):
                     
                     if potential_moves:
                         potential_moves.sort(key=lambda pos: abs(target_char['x'] - pos[0]) + abs(target_char['y'] - pos[1]))
+                        # record this step
+                        path.append(best_move)
 
+                # after movement steps, record movement action
+                if path:
+                    actions.append({
+                        'type': 'move',
+                        'enemy_id': enemy['id'],
+                        'from': {'x': start_x, 'y': start_y},
+                        'path': [{'x': pos[0], 'y': pos[1]} for pos in path]
+                    })
+
+    # attach collected actions to game state
+    game_state['enemy_actions'] = actions
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

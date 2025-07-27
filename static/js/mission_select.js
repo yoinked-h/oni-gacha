@@ -19,6 +19,35 @@ async function logoutUser() {
     }
 }
 
+async function loadPlayerStats() {
+    try {
+        const response = await fetch('/inventory');
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Update total XP
+            document.getElementById('total-xp').textContent = `Total XP: ${data.total_xp}`;
+            
+            // Update inventory
+            const inventoryList = document.getElementById('inventory-list');
+            if (Object.keys(data.inventory).length === 0) {
+                inventoryList.innerHTML = '<p>No materials yet</p>';
+            } else {
+                let inventoryHTML = '';
+                for (const [materialType, amount] of Object.entries(data.inventory)) {
+                    const materialName = materialType.replace(/_/g, ' ').toUpperCase();
+                    inventoryHTML += `<p>${materialName}: ${amount}</p>`;
+                }
+                inventoryList.innerHTML = inventoryHTML;
+            }
+        } else {
+            console.error("Failed to load player stats.");
+        }
+    } catch (error) {
+        console.error("Error loading player stats:", error);
+    }
+}
+
 async function loadMissions() {
     const response = await fetch('/missions');
     if (response.ok) {
@@ -29,7 +58,19 @@ async function loadMissions() {
             button.classList.add('mission-btn');
             button.dataset.stageId = mission.id;
             button.textContent = mission.name;
-            missionListDiv.appendChild(button);
+            
+            // Add mission info
+            const missionInfo = document.createElement('div');
+            missionInfo.classList.add('mission-info');
+            missionInfo.innerHTML = `
+                <small>${mission.description}</small><br>
+                <small>Base XP: ${mission.xp.base} | Bonus XP Chance: ${(mission.xp.extra_chance * 100).toFixed(0)}%</small>
+            `;
+            
+            const missionContainer = document.createElement('div');
+            missionContainer.appendChild(button);
+            missionContainer.appendChild(missionInfo);
+            missionListDiv.appendChild(missionContainer);
         });
     } else {
         console.error("Failed to load missions.");
@@ -66,6 +107,7 @@ window.onload = () => {
     if (!currentUserId) {
         window.location.href = '/login_page'; // Redirect if not logged in
     } else {
+        loadPlayerStats();
         loadMissions();
     }
 };

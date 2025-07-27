@@ -2,16 +2,33 @@
     {
         "id": 1,
         "name": "Forest Encounter",
-        "description": "A basic encounter in the woods."
+        "description": "A basic encounter in the woods.",
+        "xp": {"base": 100, "extra_chance": 0.3, "extra": 50},
+        "materials": {
+            "wood_fiber": {"base": 2, "extra_chance": 0.3, "extra": 1},
+            "forest_essence": {"base": 1, "extra_chance": 0.15, "extra": 1}
+        }
     },
     {
         "id": 2,
         "name": "Cave Exploration",
-        "description": "Navigate through dark caves with new enemies."
+        "description": "Navigate through dark caves with new enemies.",
+        "xp": {"base": 150, "extra_chance": 0.25, "extra": 75},
+        "materials": {
+            "stone_fragment": {"base": 2, "extra_chance": 0.25, "extra": 1},
+            "crystal_shard": {"base": 1, "extra_chance": 0.2, "extra": 1},
+            "mineral_ore": {"base": 1, "extra_chance": 0.1, "extra": 1}
+        }
     },
     {
         "id": 3,
         "name": "Mountain Ascent",
-        "description": "Climb treacherous peaks."
+        "description": "Climb treacherous peaks.",
+        "xp": {"base": 200, "extra_chance": 0.2, "extra": 100},
+        "materials": {
+            "mountain_herb": {"base": 1, "extra_chance": 0.3, "extra": 1},
+            "ice_crystal": {"base": 1, "extra_chance": 0.15, "extra": 1},
+            "rare_metal": {"base": 1, "extra_chance": 0.05, "extra": 1}
+        }
     }
 ]

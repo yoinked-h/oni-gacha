@@ -10,21 +10,29 @@
     <div id="game-screen">
         <div id="canvas-container">
             <canvas id="gameCanvas"></canvas>
+            <!-- Unit tooltip for showing unit names on hover -->
+            <div id="unit-tooltip" class="hidden"></div>
+            <!-- Action wheel for selected units -->
+            <div id="action-wheel" class="hidden">
+                <div class="action-wheel-option" id="dont-move-btn" data-action="skip">
+                    <img src="/static/imgs/icons/endturn.png" alt="Stay" class="action-icon">
+                </div>
+                <div class="action-wheel-option" id="basic-attack-btn" data-action="basic">
+                    <img src="/static/imgs/icons/basic.png" alt="Attack" class="action-icon">
+                </div>
+                <div class="action-wheel-option" id="skill-attack-btn" data-action="skill">
+                    <img src="/static/imgs/icons/skill.png" alt="Skill" class="action-icon">
+                </div>
+            </div>
         </div>
-        <div id="ui-container">
-            <div id="char-stats">
-                <!-- Character cards will be dynamically inserted here -->
+        <!-- Fixed position controls -->
+        <div id="fixed-controls">
+            <div id="team-sp-display">
+                <span id="team-sp-number">0</span>
+                <div id="team-sp-icons"></div>
             </div>
-            <div id="controls">
-                <div id="action-buttons" class="hidden">
-                    <button id="basic-attack-btn">Basic Attack</button>
-                    <button id="skill-attack-btn">Skill Attack</button>
-                </div>
-                <div id="bottom-controls">
-                    <button id="end-turn-btn">End Turn</button>
-                    <button id="back-to-missions-btn">Back to Missions</button>
-                </div>
-            </div>
+            <button id="end-turn-btn">End Turn</button>
+            <button id="back-to-missions-btn">Back to Missions</button>
         </div>
     </div>
 
