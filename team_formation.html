@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Team Formation</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="team-formation-screen" class="screen">
+        <h1>Form Your Team</h1>
+        
+        <div id="selected-mission-info">
+            <h2 id="mission-name">Mission: Loading...</h2>
+            <p id="mission-description">Loading...</p>
+        </div>
+          <div id="team-formation-container">
+            <!-- Character selection side panel (initially hidden) -->
+            <div id="character-selection-panel" class="hidden">
+                <div id="character-panel-header">
+                    <h3>Select Character</h3>
+                    <button id="close-character-panel">×</button>
+                </div>
+                <div id="character-list">
+                    <!-- Characters will be loaded here by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Main team formation area -->
+            <div id="team-formation-main">
+                <div id="selected-team">
+                    <h3>Selected Team (4 characters max)</h3>
+                    <div id="team-slots">
+                        <div class="team-slot empty" data-slot="0">
+                            <div class="slot-content">
+                                <span class="slot-number">1</span>
+                                <span class="slot-text">Click to select</span>
+                            </div>
+                        </div>
+                        <div class="team-slot empty" data-slot="1">
+                            <div class="slot-content">
+                                <span class="slot-number">2</span>
+                                <span class="slot-text">Click to select</span>
+                            </div>
+                        </div>
+                        <div class="team-slot empty" data-slot="2">
+                            <div class="slot-content">
+                                <span class="slot-number">3</span>
+                                <span class="slot-text">Click to select</span>
+                            </div>
+                        </div>
+                        <div class="team-slot empty" data-slot="3">
+                            <div class="slot-content">
+                                <span class="slot-number">4</span>
+                                <span class="slot-text">Click to select</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="character-details" class="hidden">
+            <h3>Character Details</h3>
+            <div id="character-info" class="hidden">
+                <h4 id="char-name">Character Name</h4>
+                <p id="char-description">Character description</p>                <div id="char-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Health:</span>
+                        <span id="char-hp" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Movement:</span>
+                        <span id="char-move" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Basic Attack Range:</span>
+                        <span id="char-basic-range" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Basic Attack Damage:</span>
+                        <span id="char-basic-damage" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Skill Attack Range:</span>
+                        <span id="char-skill-range" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Skill Attack Damage:</span>
+                        <span id="char-skill-damage" class="stat-value">0</span>
+                    </div>
+                </div>
+                
+                <div id="char-attacks">
+                    <h5>Abilities</h5>
+                    <div class="attack-item">
+                        <span class="attack-label">Basic Attack:</span>
+                        <span id="char-basic-desc" class="attack-description">-</span>
+                    </div>
+                    <div class="attack-item">
+                        <span class="attack-label">Skill Attack:</span>
+                        <span id="char-skill-desc" class="attack-description">-</span>
+                    </div>
+                </div>
+            </div>
+            <p id="no-character-selected">Select a character to view details</p>
+        </div>
+        
+        <div id="formation-controls">
+            <button id="start-mission-btn" disabled>Start Mission</button>
+            <button id="back-to-missions-btn">Back to Mission Select</button>        </div>
+    </div>
+    
+    <!-- Global character tooltip -->
+    <div id="character-tooltip" class="hidden">
+        <div id="tooltip-content"></div>
+    </div>
+    
+    <script src="/static/js/team_formation.js"></script>
+</body>
+</html>

@@ -86,19 +86,8 @@ missionListDiv.addEventListener('click', async (e) => {
 });
 
 async function selectStage(stageId) {
-    const response = await fetch('/select_stage', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stage_id: stageId })
-    });
-    const data = await response.json();
-
-    if (response.ok) {
-        alert(data.message);
-        window.location.href = '/'; // Redirect to main game page
-    } else {
-        alert(data.error);
-    }
+    // Redirect to team formation page with the selected mission
+    window.location.href = `/team_formation_page?mission=${stageId}`;
 }
 
 // Initial load

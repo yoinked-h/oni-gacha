@@ -3,10 +3,10 @@
         "abc": {
             "id": "1",
             "password": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-            "total_xp": 250,
+            "total_xp": 568,
             "inventory": {
-                "wood_fiber": 4,
-                "forest_essence": 3
+                "wood_fiber": 10,
+                "forest_essence": 6
             }
         }
     },
@@ -17,13 +17,20 @@
                 "enemies": [
                     {
                         "id": 1,
-                        "x": 6,
+                        "x": 5,
                         "y": 4,
-                        "hp": 50,
+                        "hp": 46,
                         "max_hp": 50,
                         "attack_range": 1,
                         "move_range": 2,
-                        "damage": 10
+                        "damage": 10,
+                        "element": "fire",
+                        "shield_hp": 30,
+                        "max_shield_hp": 30,
+                        "shield_weak_to": [
+                            "water",
+                            "ice"
+                        ]
                     }
                 ],
                 "grid_size": {
@@ -33,50 +40,70 @@
                 "characters": [
                     {
                         "id": 1,
-                        "x": 1,
-                        "y": 1,
-                        "hp": 100,
-                        "max_hp": 100,
-                        "attack_range": 2,
+                        "char_id": 5,
+                        "name": "Rex the Berserker",
+                        "x": 4,
+                        "y": 4,
+                        "hp": 110,
+                        "max_hp": 110,
+                        "attack_range": 1,
+                        "skill_attack_range": 1,
                         "move_range": 3,
                         "has_acted": true,
-                        "damage": 25
+                        "damage": 40,
+                        "skill_damage": 65,
+                        "element": "dark"
                     },
                     {
                         "id": 2,
-                        "x": 4,
+                        "char_id": 1,
+                        "name": "Kai the Blade",
+                        "x": 5,
                         "y": 3,
-                        "hp": 100,
-                        "max_hp": 100,
-                        "attack_range": 2,
+                        "hp": 120,
+                        "max_hp": 120,
+                        "attack_range": 1,
+                        "skill_attack_range": 2,
                         "move_range": 3,
                         "has_acted": false,
-                        "damage": 25
+                        "damage": 35,
+                        "skill_damage": 55,
+                        "element": "fire"
                     },
                     {
                         "id": 3,
-                        "x": 4,
+                        "char_id": 2,
+                        "name": "Luna the Archer",
+                        "x": 5,
                         "y": 5,
-                        "hp": 100,
-                        "max_hp": 100,
-                        "attack_range": 2,
-                        "move_range": 3,
+                        "hp": 90,
+                        "max_hp": 90,
+                        "attack_range": 3,
+                        "skill_attack_range": 4,
+                        "move_range": 2,
                         "has_acted": false,
-                        "damage": 25
+                        "damage": 28,
+                        "skill_damage": 45,
+                        "element": "air"
                     },
                     {
                         "id": 4,
-                        "x": 3,
-                        "y": 8,
-                        "hp": 100,
-                        "max_hp": 100,
+                        "char_id": 4,
+                        "name": "Zara the Mage",
+                        "x": 4,
+                        "y": 6,
+                        "hp": 80,
+                        "max_hp": 80,
                         "attack_range": 2,
-                        "move_range": 3,
+                        "skill_attack_range": 3,
+                        "move_range": 2,
                         "has_acted": false,
-                        "damage": 25
+                        "damage": 30,
+                        "skill_damage": 50,
+                        "element": "lightning"
                     }
                 ],
-                "team_sp": 3,
+                "team_sp": 4,
                 "max_team_sp": 5,
                 "turn": "player",
                 "active_character_id": 2

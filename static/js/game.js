@@ -2,6 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const canvasContainer = document.getElementById('canvas-container');
 const unitTooltip = document.getElementById('unit-tooltip');
+const attackTooltip = document.getElementById('attack-tooltip');
 const actionWheel = document.getElementById('action-wheel');
 let TILE_SIZE = 40;
 
@@ -87,6 +88,7 @@ function animationLoop(timestamp) {
 requestAnimationFrame(animationLoop);
 
 let gameState = {};
+let characterData = {}; // Store character templates with attack descriptions
 let currentUserId = null;
 
 // UI Elements
@@ -95,10 +97,11 @@ const endTurnBtn = document.getElementById('end-turn-btn');
 const dontMoveBtn = document.getElementById('dont-move-btn');
 const basicAttackBtn = document.getElementById('basic-attack-btn');
 const skillAttackBtn = document.getElementById('skill-attack-btn');
+const ultimateAttackBtn = document.getElementById('ultimate-attack-btn');
 
 let selectedCharacter = null;
 let hoveredUnit = null; // Can be character or enemy
-let isAttackMode = null; // Can be 'basic' or 'skill'
+let isAttackMode = null; // Can be 'basic', 'skill', or 'ultimate'
 let walkableRange = [];
 let attackableRange = [];
 
@@ -155,22 +158,49 @@ async function fetchGameState() {
     }
 }
 
+async function fetchCharacterData() {
+    try {
+        const response = await fetch('/characters');
+        if (response.ok) {
+            const characters = await response.json();
+            // Convert array to object with character id as key for easy lookup
+            characterData = {};
+            characters.forEach(char => {
+                characterData[char.id] = char;
+            });
+        } else {
+            console.error('Failed to fetch character data');
+        }
+    } catch (error) {
+        console.error('Error fetching character data:', error);
+    }
+}
+
 function showMissionCompleteDialog(rewards) {
-    let materialsText = '';
+    // Update XP display
+    document.getElementById('xp-amount').textContent = `+${rewards.xp}`;
+    
+    // Update materials display
+    const materialsList = document.getElementById('materials-list');
+    materialsList.innerHTML = '';
+    
     for (const [materialType, amount] of Object.entries(rewards.materials)) {
         const materialName = materialType.replace(/_/g, ' ').toUpperCase();
-        materialsText += `${materialName}: +${amount}\n`;
+        const materialItem = document.createElement('div');
+        materialItem.className = 'material-item';
+        materialItem.innerHTML = `
+            <span class="material-name">${materialName}</span>
+            <span class="material-amount">+${amount}</span>
+        `;
+        materialsList.appendChild(materialItem);
     }
     
-    const message = `🎉 MISSION COMPLETE! 🎉\n\nRewards:\nXP: +${rewards.xp}\n\nMaterials:\n${materialsText}`;
-    alert(message);
+    // Show the popup
+    document.getElementById('mission-complete-overlay').classList.remove('hidden');
     
-    // Clear mission complete flag and redirect to mission select
+    // Clear mission complete flag
     gameState.mission_complete = false;
     gameState.rewards = null;
-    
-    // Redirect back to mission select after showing rewards
-    window.location.href = '/mission_select_page';
 }
 
 // --- Drawing Functions ---
@@ -187,7 +217,54 @@ function drawGrid() {
 
 function drawHighlights() {
     const range = isAttackMode ? attackableRange : walkableRange;
-    const color = isAttackMode ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 255, 0, 0.3)';
+    let color = isAttackMode ? 'rgba(255, 0, 0, 0.3)' : 'rgba(0, 255, 0, 0.3)';
+    
+    // Customize color based on attack type
+    if (isAttackMode && selectedCharacter && characterData[selectedCharacter.id]) {
+        const charData = characterData[selectedCharacter.id];
+        let attackPattern;
+        
+        if (isAttackMode === 'ultimate') {
+            attackPattern = charData.ultimate_attack_type;
+        } else if (isAttackMode === 'skill') {
+            attackPattern = charData.skill_attack_type;
+        } else {
+            attackPattern = charData.basic_attack_type;
+        }
+        
+        switch (attackPattern) {
+            case 'healing':
+            case 'mass-heal':
+            case 'buff-heal':
+            case 'revive-heal':
+                color = 'rgba(0, 255, 0, 0.4)'; // Green for healing
+                break;
+            case 'area':
+            case 'lifesteal-area':
+            case 'poison-area':
+            case 'chaos-area':
+                color = 'rgba(255, 165, 0, 0.4)'; // Orange for area attacks
+                break;
+            case 'full-area':
+            case 'shield-break':
+            case 'team-wide':
+            case 'all-enemies':
+                color = 'rgba(128, 0, 128, 0.4)'; // Purple for full-area attacks
+                break;
+            case 'debuff':
+            case 'buff':
+                color = 'rgba(255, 255, 0, 0.4)'; // Yellow for status effects
+                break;
+            case 'single':
+            default:
+                if (isAttackMode === 'ultimate') {
+                    color = 'rgba(255, 0, 255, 0.5)'; // Bright magenta for ultimate attacks
+                } else {
+                    color = 'rgba(255, 0, 0, 0.3)'; // Red for single target
+                }
+                break;
+        }
+    }
 
     ctx.fillStyle = color;
     range.forEach(tile => {
@@ -224,6 +301,16 @@ function drawCharacters() {
         // Draw health bar above character
         drawHealthBar(x, y - 8, TILE_SIZE, char.hp, char.max_hp, '#00ff00', '#ff0000');
         
+        // Draw energy bar below health bar
+        if (char.energy !== undefined && char.max_energy !== undefined) {
+            drawEnergyBar(x, y - 16, TILE_SIZE, char.energy, char.max_energy);
+        }
+        
+        // Draw element indicator
+        if (char.element) {
+            drawElementIndicator(x + 2, y + 2, char.element);
+        }
+        
         // Draw character ID
         ctx.fillStyle = 'white';
         ctx.font = '12px Arial';
@@ -244,6 +331,16 @@ function drawEnemies() {
 
         // Draw health bar above enemy
         drawHealthBar(x, y - 8, TILE_SIZE, enemy.hp, enemy.max_hp, '#00ff00', '#ff0000');
+        
+        // Draw shield bar if enemy has shield
+        if (enemy.shield_hp && enemy.max_shield_hp) {
+            drawShieldBar(x, y - 16, TILE_SIZE, enemy.shield_hp, enemy.max_shield_hp);
+            
+            // Draw weakness indicators above shield bar if enemy has shield weaknesses
+            if (enemy.shield_weak_to && enemy.shield_weak_to.length > 0) {
+                drawWeaknessIndicators(x, y - 24, enemy.shield_weak_to);
+            }
+        }
         
         // Draw enemy ID
         ctx.fillStyle = 'white';
@@ -269,6 +366,108 @@ function drawHealthBar(x, y, width, currentHP, maxHP, healthColor, damageColor) 
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, width, barHeight);
+}
+
+function drawShieldBar(x, y, width, currentShield, maxShield) {
+    if (maxShield <= 0) return;
+    
+    const barHeight = 4;
+    const shieldRatio = currentShield / maxShield;
+    
+    // Background
+    ctx.fillStyle = '#333';
+    ctx.fillRect(x, y, width, barHeight);
+    
+    // Shield bar
+    ctx.fillStyle = '#00bfff';
+    ctx.fillRect(x, y, width * shieldRatio, barHeight);
+    
+    // Border
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, width, barHeight);
+}
+
+function drawEnergyBar(x, y, width, currentEnergy, maxEnergy) {
+    if (maxEnergy <= 0) return;
+    
+    const barHeight = 4;
+    const energyRatio = currentEnergy / maxEnergy;
+    
+    // Background
+    ctx.fillStyle = '#333';
+    ctx.fillRect(x, y, width, barHeight);
+    
+    // Energy bar (purple/magenta)
+    ctx.fillStyle = '#FF00FF';
+    ctx.fillRect(x, y, width * energyRatio, barHeight);
+    
+    // Border
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, width, barHeight);
+}
+
+function drawWeaknessIndicators(x, y, weaknesses) {
+    if (!weaknesses || weaknesses.length === 0) return;
+    
+    const elementColors = {
+        'fire': '#FF4444',
+        'water': '#4444FF',
+        'earth': '#8B4513',
+        'air': '#87CEEB',
+        'lightning': '#FFD700',
+        'grass': '#32CD32',
+        'ice': '#87CEEB',
+        'dark': '#800080'
+    };
+    
+    const radius = 4;
+    const spacing = 10;
+    const totalWidth = weaknesses.length * spacing - 2;
+    const startX = x + (TILE_SIZE - totalWidth) / 2;
+    
+    weaknesses.forEach((weakness, index) => {
+        const weaknessX = startX + index * spacing;
+        const color = elementColors[weakness] || '#FFFFFF';
+        
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(weaknessX, y, radius, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Add border
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
+}
+
+function drawElementIndicator(x, y, element) {
+    // Load element data and draw colored circle
+    const elementColors = {
+        'fire': '#FF4444',
+        'water': '#4444FF',
+        'earth': '#8B4513',
+        'air': '#87CEEB',
+        'lightning': '#FFD700',
+        'grass': '#32CD32',
+        'ice': '#87CEEB',
+        'dark': '#800080'
+    };
+    
+    const color = elementColors[element] || '#FFFFFF';
+    const radius = 6;
+    
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Add border
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 }
 
 function drawSPIndicators(x, y, width, currentSP, maxSP) {
@@ -380,11 +579,71 @@ skillAttackBtn.addEventListener('click', () => {
     if (teamSP <= 0) return;
     
     isAttackMode = 'skill';
-    attackableRange = calculateRange(selectedCharacter, selectedCharacter.attack_range);
+    const skillRange = selectedCharacter.skill_attack_range || selectedCharacter.attack_range;
+    attackableRange = calculateRange(selectedCharacter, skillRange);
     walkableRange = [];
     
     hideActionWheel();
     draw();
+});
+
+ultimateAttackBtn.addEventListener('click', () => {
+    if (!selectedCharacter) return;
+    const charData = characterData[selectedCharacter.id];
+    if (!charData || !charData.ultimate_attack_range) return;
+    
+    const energy = selectedCharacter.energy || 0;
+    const energyCost = charData.ultimate_energy_cost || 100;
+    if (energy < energyCost) return;
+    
+    isAttackMode = 'ultimate';
+    const ultimateRange = charData.ultimate_attack_range === 99 ? 99 : charData.ultimate_attack_range;
+    if (ultimateRange === 99) {
+        // Global range ultimate - show entire battlefield as attackable
+        attackableRange = [];
+        for (let x = 0; x < gameState.grid_size.width; x++) {
+            for (let y = 0; y < gameState.grid_size.height; y++) {
+                attackableRange.push({ x, y });
+            }
+        }
+    } else {
+        attackableRange = calculateRange(selectedCharacter, ultimateRange);
+    }
+    walkableRange = [];
+    
+    hideActionWheel();
+    draw();
+});
+
+// Add tooltip event listeners for attack buttons
+basicAttackBtn.addEventListener('mouseenter', (e) => {
+    if (selectedCharacter && characterData[selectedCharacter.id]) {
+        showAttackTooltip(e, 'basic', selectedCharacter.id);
+    }
+});
+
+basicAttackBtn.addEventListener('mouseleave', () => {
+    hideAttackTooltip();
+});
+
+skillAttackBtn.addEventListener('mouseenter', (e) => {
+    if (selectedCharacter && characterData[selectedCharacter.id]) {
+        showAttackTooltip(e, 'skill', selectedCharacter.id);
+    }
+});
+
+skillAttackBtn.addEventListener('mouseleave', () => {
+    hideAttackTooltip();
+});
+
+ultimateAttackBtn.addEventListener('mouseenter', (e) => {
+    if (selectedCharacter && characterData[selectedCharacter.id]) {
+        showAttackTooltip(e, 'ultimate', selectedCharacter.id);
+    }
+});
+
+ultimateAttackBtn.addEventListener('mouseleave', () => {
+    hideAttackTooltip();
 });
 
 async function handleEndTurnForCharacter() {
@@ -411,15 +670,15 @@ canvas.addEventListener('mousemove', (e) => {
     const enemy = gameState.enemies?.find(e => e.x === x && e.y === y);
     const character = gameState.characters?.find(c => c.x === x && c.y === y);
     const unit = enemy || character;
-    
+    const ischaracter = !!character;
     // Always update hover state and handle action wheel visibility
     if (unit !== hoveredUnit) {
         hoveredUnit = unit;
-        updateTooltip(e, unit);
+        updateTooltip(e, unit, ischaracter);
         draw();
     } else if (unit) {
         // Still hovering over the same unit, update tooltip position
-        updateTooltip(e, unit);
+        updateTooltip(e, unit, ischaracter);
     }
     
     // Always check action wheel visibility on mouse move
@@ -429,6 +688,7 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseleave', () => {
     hoveredUnit = null;
     hideTooltip();
+    hideAttackTooltip();
     
     draw();
 });
@@ -441,10 +701,58 @@ canvas.addEventListener('click', async (e) => {
     const clickedEnemy = gameState.enemies?.find(e => e.x === x && e.y === y);
     const clickedChar = gameState.characters?.find(c => c.x === x && c.y === y);
 
-    if (selectedCharacter) {
-        if (isAttackMode && clickedEnemy && attackableRange.some(t => t.x === x && t.y === y)) {
-            await attack(isAttackMode, clickedEnemy.id);
-        } else if (!isAttackMode && walkableRange.some(t => t.x === x && t.y === y)) {
+    if (selectedCharacter && isAttackMode) {
+        // Get character data to determine attack pattern
+        const charData = characterData[selectedCharacter.id];
+        if (!charData) {
+            alert("Character data not found");
+            resetSelection();
+            return;
+        }
+        
+        let attackPattern;
+        if (isAttackMode === 'ultimate') {
+            attackPattern = charData.ultimate_attack_type;
+        } else if (isAttackMode === 'skill') {
+            attackPattern = charData.skill_attack_type;
+        } else {
+            attackPattern = charData.basic_attack_type;
+        }
+        
+        // Check if click is within attackable range
+        if (!attackableRange.some(t => t.x === x && t.y === y)) {
+            resetSelection();
+            return;
+        }
+        
+        if (attackPattern === 'healing' || attackPattern === 'mass-heal' || attackPattern === 'buff-heal' || attackPattern === 'revive-heal') {
+            // Healing attacks target allies
+            if (clickedChar && clickedChar.id !== selectedCharacter.id) {
+                // Heal specific ally
+                await attack(isAttackMode, clickedChar.id);
+            } else if (!clickedChar && !clickedEnemy) {
+                // Heal all allies in range (click on empty space)
+                await attack(isAttackMode);
+            } else {
+                alert("Healing attacks can only target allies or empty space for area heal");
+            }
+        } else if (attackPattern === 'single') {
+            // Single target attack - must target enemy
+            if (clickedEnemy) {
+                await attack(isAttackMode, clickedEnemy.id);
+            } else {
+                alert("Please select an enemy to attack");
+            }
+        } else if (attackPattern === 'area' || attackPattern === 'lifesteal-area' || attackPattern === 'poison-area' || attackPattern === 'chaos-area') {
+            // Area attack - can target any tile in range
+            await attack(isAttackMode, null, x, y);
+        } else if (attackPattern === 'full-area' || attackPattern === 'shield-break' || attackPattern === 'team-wide' || attackPattern === 'all-enemies' || attackPattern === 'debuff' || attackPattern === 'buff') {
+            // Full area attack or team-wide effects - targets all enemies/allies in range
+            await attack(isAttackMode);
+        }
+    } else if (selectedCharacter && !isAttackMode) {
+        // Movement mode
+        if (walkableRange.some(t => t.x === x && t.y === y)) {
             await move(selectedCharacter.id, x, y);
         } else {
             resetSelection();
@@ -461,19 +769,25 @@ canvas.addEventListener('click', async (e) => {
 });
 
 // --- UI Functions ---
-function updateTooltip(mouseEvent, unit) {
+function updateTooltip(mouseEvent, unit, isCharacter) {
     if (!unit) {
         hideTooltip();
         return;
     }
     
     let tooltipText = '';
-    if (unit.hp !== undefined && unit.damage !== undefined && unit.sp === undefined) {
+    if (!isCharacter) {
         // It's an enemy (has hp and damage but no sp)
-        tooltipText = `Enemy ${unit.id} (HP: ${unit.hp}/${unit.max_hp}, ATK: ${unit.damage})`;
+        const elementText = unit.element ? ` | Element: ${unit.element.charAt(0).toUpperCase() + unit.element.slice(1)}` : '';
+        const shieldText = unit.shield_hp > 0 ? ` | Shield: ${unit.shield_hp}/${unit.max_shield_hp}` : '';
+        const weaknessText = unit.shield_weak_to && unit.shield_weak_to.length > 0 ? ` | Weak to: ${unit.shield_weak_to.join(', ')}` : '';
+        tooltipText = `Enemy ${unit.id} (HP: ${unit.hp}/${unit.max_hp}, ATK: ${unit.damage}${elementText}${shieldText}${weaknessText})`;
     } else {
         // It's a character
-        tooltipText = `Character ${unit.id} (HP: ${unit.hp}/${unit.max_hp})`;
+        const characterName = unit.name || `Character ${unit.id}`;
+        const elementText = unit.element ? ` | Element: ${unit.element.charAt(0).toUpperCase() + unit.element.slice(1)}` : '';
+        const energyText = unit.energy !== undefined ? ` | Energy: ${unit.energy}/${unit.max_energy || 100}` : '';
+        tooltipText = `${characterName} (HP: ${unit.hp}/${unit.max_hp}${elementText}${energyText})`;
     }
     
     unitTooltip.textContent = tooltipText;
@@ -484,6 +798,42 @@ function updateTooltip(mouseEvent, unit) {
 
 function hideTooltip() {
     unitTooltip.classList.add('hidden');
+}
+
+function showAttackTooltip(mouseEvent, attackType, characterId) {
+    const charData = characterData[characterId];
+    if (!charData) return;
+    
+    let attackName, attackDescription;
+    
+    if (attackType === 'ultimate') {
+        attackName = charData.ultimate_attack_description?.split(':')[0] || 'Ultimate Attack';
+        attackDescription = charData.ultimate_attack_description?.split(':')[1]?.trim() || 'No description available';
+    } else if (attackType === 'skill') {
+        attackName = charData.skill_attack_description?.split(':')[0] || 'Skill Attack';
+        attackDescription = charData.skill_attack_description?.split(':')[1]?.trim() || 'No description available';
+    } else {
+        attackName = charData.basic_attack_description?.split(':')[0] || 'Basic Attack';
+        attackDescription = charData.basic_attack_description?.split(':')[1]?.trim() || 'No description available';
+    }
+    
+    const attackNameElement = attackTooltip.querySelector('.attack-name');
+    const attackDescElement = attackTooltip.querySelector('.attack-description');
+    
+    attackNameElement.textContent = attackName;
+    attackDescElement.textContent = attackDescription;
+    
+    attackTooltip.style.left = (mouseEvent.clientX + 10) + 'px';
+    attackTooltip.style.top = (mouseEvent.clientY - 50) + 'px';
+    attackTooltip.classList.remove('hidden');
+}
+
+function hideAttackTooltip() {
+    attackTooltip.classList.add('hidden');
+}
+
+function hideAttackTooltip() {
+    attackTooltip.classList.add('hidden');
 }
 
 function handleActionWheelVisibility(mouseEvent) {
@@ -512,12 +862,27 @@ function showActionWheel(character, mouseEvent) {
     const teamSP = gameState.team_sp || 0;
     skillAttackBtn.style.opacity = teamSP > 0 ? '1' : '0.5';
     skillAttackBtn.style.pointerEvents = teamSP > 0 ? 'auto' : 'none';
+    
+    // Update ultimate button state based on character energy
+    const charData = characterData[character.id];
+    const energy = character.energy || 0;
+    const energyCost = charData?.ultimate_energy_cost || 100;
+    const hasUltimate = charData?.ultimate_attack_range !== undefined;
+    
+    if (hasUltimate) {
+        ultimateAttackBtn.style.display = 'block';
+        ultimateAttackBtn.style.opacity = energy >= energyCost ? '1' : '0.5';
+        ultimateAttackBtn.style.pointerEvents = energy >= energyCost ? 'auto' : 'none';
+    } else {
+        ultimateAttackBtn.style.display = 'none';
+    }
+    
     actionWheel.classList.remove('hidden');
 }
 
 function hideActionWheel() {
-    
     actionWheel.classList.add('hidden');
+    hideAttackTooltip(); // Hide attack tooltips when action wheel is hidden
 }
 
 function selectCharacter(char, mouseEvent) {
@@ -586,18 +951,114 @@ async function move(characterId, x, y) {
     }
 }
 
-async function attack(attackType, targetId) {
-    const enemy = gameState.enemies.find(e => e.id === targetId);
-    if (enemy) {
-        const spawnX = enemy.x * TILE_SIZE + TILE_SIZE/2;
-        const spawnY = enemy.y * TILE_SIZE + TILE_SIZE/2;
-        spawnParticles(spawnX, spawnY, 'orange', 15);
+async function attack(attackType, targetId, targetX, targetY) {
+    if (!selectedCharacter) return;
+    
+    // Get character template data for attack type
+    const charData = characterData[selectedCharacter.id];
+    if (!charData) {
+        alert("Character data not found");
+        return;
+    }
+
+    let attackPattern;
+    if (attackType === 'ultimate') {
+        attackPattern = charData.ultimate_attack_type;
+    } else if (attackType === 'skill') {
+        attackPattern = charData.skill_attack_type;
+    } else {
+        attackPattern = charData.basic_attack_type;
+    }
+    
+    let requestData = {
+        attacker_id: selectedCharacter.id,
+        attack_type: attackType
+    };
+    
+    // Add appropriate target data based on attack pattern
+    if (attackPattern === 'healing' || attackPattern === 'mass-heal' || attackPattern === 'buff-heal' || attackPattern === 'revive-heal') {
+        // For healing, target allies or heal all in range
+        if (targetId) {
+            requestData.target_id = targetId;
+        }
+        // If no specific target, heal all allies in range
+    } else if (attackPattern === 'single') {
+        // Single target attack
+        if (!targetId) {
+            alert("Please select a target");
+            return;
+        }
+        requestData.target_id = targetId;
+    } else if (attackPattern === 'area' || attackPattern === 'lifesteal-area' || attackPattern === 'poison-area' || attackPattern === 'chaos-area') {
+        // Area attack needs target coordinates
+        if (targetX === undefined || targetY === undefined) {
+            alert("Please select a target area");
+            return;
+        }
+        requestData.target_x = targetX;
+        requestData.target_y = targetY;
+    } else if (attackPattern === 'full-area' || attackPattern === 'shield-break' || attackPattern === 'team-wide' || attackPattern === 'all-enemies' || attackPattern === 'debuff' || attackPattern === 'buff') {
+        // Full area attack or team-wide effects don't need specific target
+        // Will affect all enemies/allies in range
+    }
+    
+    // Visual effects based on attack type and pattern
+    if (attackType === 'ultimate') {
+        // Special ultimate attack visual effects
+        const spawnX = selectedCharacter.x * TILE_SIZE + TILE_SIZE/2;
+        const spawnY = selectedCharacter.y * TILE_SIZE + TILE_SIZE/2;
+        
+        // Create dramatic ultimate attack effects
+        spawnParticles(spawnX, spawnY, 'magenta', 50);
+        spawnParticles(spawnX, spawnY, 'white', 30);
+        spawnParticles(spawnX, spawnY, 'gold', 20);
+        
+        // Add screen-wide effect for ultimate attacks
+        if (attackPattern === 'all-enemies' || attackPattern === 'team-wide' || attackPattern === 'debuff' || attackPattern === 'buff') {
+            // Create effects across the entire battlefield
+            for (let i = 0; i < 10; i++) {
+                const randomX = Math.random() * canvas.width;
+                const randomY = Math.random() * canvas.height;
+                spawnParticles(randomX, randomY, 'purple', 15);
+            }
+        }
+    } else if (attackPattern === 'single' && targetId) {
+        const enemy = gameState.enemies.find(e => e.id === targetId);
+        if (enemy) {
+            const spawnX = enemy.x * TILE_SIZE + TILE_SIZE/2;
+            const spawnY = enemy.y * TILE_SIZE + TILE_SIZE/2;
+            spawnParticles(spawnX, spawnY, 'orange', 15);
+        }
+    } else if ((attackPattern === 'area' || attackPattern === 'lifesteal-area' || attackPattern === 'poison-area' || attackPattern === 'chaos-area') && targetX !== undefined && targetY !== undefined) {
+        const spawnX = targetX * TILE_SIZE + TILE_SIZE/2;
+        const spawnY = targetY * TILE_SIZE + TILE_SIZE/2;
+        const color = attackType === 'ultimate' ? 'magenta' : 'red';
+        spawnParticles(spawnX, spawnY, color, 25);
+    } else if (attackPattern === 'full-area' || attackPattern === 'shield-break') {
+        // Visual effects for all enemies in range
+        const range = attackType === 'ultimate' ? (charData.ultimate_attack_range === 99 ? 99 : charData.ultimate_attack_range) :
+                     attackType === 'skill' ? selectedCharacter.skill_attack_range : selectedCharacter.attack_range;
+        gameState.enemies.forEach(enemy => {
+            const distance = Math.abs(enemy.x - selectedCharacter.x) + Math.abs(enemy.y - selectedCharacter.y);
+            if (range === 99 || distance <= range) {
+                const spawnX = enemy.x * TILE_SIZE + TILE_SIZE/2;
+                const spawnY = enemy.y * TILE_SIZE + TILE_SIZE/2;
+                const color = attackType === 'ultimate' ? 'magenta' : 'purple';
+                spawnParticles(spawnX, spawnY, color, 20);
+            }
+        });
+    } else if (attackPattern === 'healing' || attackPattern === 'mass-heal' || attackPattern === 'buff-heal' || attackPattern === 'revive-heal') {
+        // Visual effects for healing
+        const spawnX = selectedCharacter.x * TILE_SIZE + TILE_SIZE/2;
+        const spawnY = selectedCharacter.y * TILE_SIZE + TILE_SIZE/2;
+        const color = attackType === 'ultimate' ? 'gold' : 'green';
+        spawnParticles(spawnX, spawnY, color, 20);
     }
     
     const response = await fetch('/attack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attacker_id: selectedCharacter.id, target_id: targetId, attack_type: attackType })
+        body: JSON.stringify(requestData)
     });
     
     if (response.ok) {
@@ -644,9 +1105,18 @@ function processEnemyActions() {
 window.onload = () => {
     currentUserId = localStorage.getItem('user_id');
     if (currentUserId) {
+        fetchCharacterData(); // Load character data for tooltips
         fetchGameState();
     } else {
         window.location.href = '/login_page';
+    }
+    
+    // Add event listener for mission complete continue button
+    const continueBtn = document.getElementById('continue-btn');
+    if (continueBtn) {
+        continueBtn.addEventListener('click', () => {
+            window.location.href = '/mission_select_page';
+        });
     }
 };
 

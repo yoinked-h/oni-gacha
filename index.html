@@ -12,6 +12,11 @@
             <canvas id="gameCanvas"></canvas>
             <!-- Unit tooltip for showing unit names on hover -->
             <div id="unit-tooltip" class="hidden"></div>
+            <!-- Attack tooltip for showing attack descriptions -->
+            <div id="attack-tooltip" class="hidden">
+                <div class="attack-name"></div>
+                <div class="attack-description"></div>
+            </div>
             <!-- Action wheel for selected units -->
             <div id="action-wheel" class="hidden">
                 <div class="action-wheel-option" id="dont-move-btn" data-action="skip">
@@ -23,6 +28,27 @@
                 <div class="action-wheel-option" id="skill-attack-btn" data-action="skill">
                     <img src="/static/imgs/icons/skill.png" alt="Skill" class="action-icon">
                 </div>
+                <div class="action-wheel-option" id="ultimate-attack-btn" data-action="ultimate">
+                    <img src="/static/imgs/icons/skill.png" alt="Ultimate" class="action-icon" style="filter: brightness(0) invert(1) hue-rotate(270deg);">
+                </div>
+            </div>
+        </div>
+        <!-- Mission Complete Popup -->
+        <div id="mission-complete-overlay" class="hidden">
+            <div id="mission-complete-popup">
+                <h2>🎉 MISSION COMPLETE! 🎉</h2>
+                <div id="rewards-section">
+                    <h3>Rewards Earned:</h3>
+                    <div id="xp-reward">
+                        <span class="reward-label">XP Gained:</span>
+                        <span id="xp-amount" class="reward-value">0</span>
+                    </div>
+                    <div id="materials-rewards">
+                        <span class="reward-label">Materials Obtained:</span>
+                        <div id="materials-list"></div>
+                    </div>
+                </div>
+                <button id="continue-btn">Continue</button>
             </div>
         </div>
         <!-- Fixed position controls -->

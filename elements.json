@@ -1,0 +1,44 @@
+[
+    {
+        "id": "fire",
+        "name": "Fire",
+        "color": "#FF4444",
+        "description": "hot hot ow owwwww"
+    },
+    {
+        "id": "water",
+        "name": "Water",
+        "color": "#4444FF",
+        "description": "w-water?! no way!! i need to drink monster and only monster!!"
+    },
+    {
+        "id": "grass",
+        "name": "Grass",
+        "color": "#32CD32",
+        "description": "go outside?! and touch grass?!!! no way!!!"
+    },
+    {
+        "id": "electricity",
+        "name": "Electricity",
+        "color": "#FAFF73",
+        "description": "the blood of computers... amazing..."
+    },
+    {
+        "id": "moon",
+        "name": "Moon",
+        "color": "#5F48A8",
+        "description": "the night, so cool..."
+    },
+    {
+        "id": "star",
+        "name": "Star",
+        "color": "#FFF5C7",
+        "description": "im a star!!  waooo"
+    },
+    {
+        "id": "magic",
+        "name": "Magic",
+        "color": "#EE05FF",
+        "description": "magic for a magical girl"
+    }
+]
